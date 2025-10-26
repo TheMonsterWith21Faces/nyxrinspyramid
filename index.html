@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Nyxrin’s Pyramid</title>
+<link href="https://fonts.googleapis.com/css2?family=Petit+Formal+Script&display=swap" rel="stylesheet">
+<style>
+  :root{ --ivory:#f8f5e7; --black:#111; --gold:#c5a100; --gold-soft:#e4ca58; }
+  html,body{background:var(--ivory);margin:0}
+  body{display:flex;flex-direction:column;align-items:center;gap:16px;padding:24px}
+  h1{margin:0;font-family:'Petit Formal Script',cursive;font-size:64px;color:#111}
+  svg{width:min(1500px,96vw); height:auto; display:block}
+  .zone{cursor:pointer}
+  .zone:hover{filter:brightness(1.06)}
+  .label{font-family:'Petit Formal Script',cursive;font-size:30px;fill:#111;text-anchor:middle;pointer-events:none}
+  .odds{font:12px ui-sans-serif,system-ui,Arial;opacity:.75;fill:#111;text-anchor:middle;pointer-events:none}
+  #overlay{position:absolute;left:0;right:0;top:12px;display:none;justify-content:center;pointer-events:none}
+  #overlay span{padding:8px 18px;border:3px solid #111;border-radius:12px;background:rgba(255,255,255,.92);font-family:'Petit Formal Script',cursive;font-size:48px}
+  .chips{display:flex;gap:12px;justify-content:center;align-items:center;flex-wrap:wrap}
+  .chip{width:50px;height:50px;border-radius:50%;border:3px solid #111;background:radial-gradient(circle at 30% 30%,var(--gold-soft),var(--gold));display:grid;place-items:center;cursor:pointer;user-select:none;font-weight:700;color:#111;box-shadow:0 2px 0 rgba(0,0,0,.25) inset,0 2px 6px rgba(0,0,0,.15)}
+  .chip.active{outline:4px solid #222;outline-offset:2px}
+  .controls{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
+  button{background:#111;color:#fff;border:none;border-radius:10px;padding:10px 16px;font-size:16px;cursor:pointer}
+  .meter{display:flex;gap:16px;justify-content:center;flex-wrap:wrap}
+  .meter div{padding:4px 10px;border:1px solid #000;border-radius:8px;background:#fff8e2}
+  .small{font-size:12px;opacity:.85;text-align:center}
+  .board-wrap{position:relative}
+</style>
+</head>
+<body>
+  <h1>Nyxrin’s Pyramid</h1>
+
+  <div class="board-wrap">
+    <div id="overlay"><span id="winOverlay"></span></div>
+
+    <svg viewBox="0 0 1500 860" id="board" aria-label="betting board">
+      <defs>
+        <linearGradient id="triFill" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#fff9e6"/><stop offset="1" stop-color="#efe6c8"/>
+        </linearGradient>
+      </defs>
+
+      <!-- Main triangle (base extended 800 → 830) -->
+      <polygon id="tri" points="750,80 1320,830 180,830" fill="url(#triFill)" stroke="#111" stroke-width="10"/>
+
+      <!-- Row guides -->
+      <g opacity=".12" stroke="#111" stroke-width="2">
+        <line x1="360" y1="230" x2="1140" y2="230"/>
+        <line x1="310" y1="355" x2="1190" y2="355"/>
+        <line x1="260" y1="480" x2="1240" y2="480"/>
+        <line x1="220" y1="605" x2="1280" y2="605"/>
+        <line x1="200" y1="730" x2="1300" y2="730"/>
+      </g>
+
+      <!-- LOW / HIGH triangles -->
+      <polygon class="zone" data-id="low"  points="80,190 300,190 190,420" fill="#fff3bf" stroke="#111" stroke-width="8"/>
+      <text x="190" y="245" class="label">low</text>
+      <text x="190" y="275" class="label" style="font-size:28px">2–6</text>
+      <text x="190" y="302" class="odds">1 : 1</text>
+
+      <polygon class="zone" data-id="high" points="1420,190 1200,190 1310,420" fill="#fff3bf" stroke="#111" stroke-width="8"/>
+      <text x="1310" y="245" class="label">high</text>
+      <text x="1310" y="275" class="label" style="font-size:28px">8–12</text>
+      <text x="1310" y="302" class="odds">1 : 1</text>
+
+      <!-- Left circles hugging the pyramid edge -->
+      <circle class="zone" data-id="2or12" cx="591" cy="205" r="45" fill="#fff3bf" stroke="#111" stroke-width="6"/>
+      <text x="591" y="212" class="label" style="font-size:24px">2/12</text><text x="591" y="236" class="odds">1 : 12</text>
+
+      <circle class="zone" data-id="3or11" cx="492" cy="330" r="45" fill="#fff3bf" stroke="#111" stroke-width="6"/>
+      <text x="492" y="337" class="label" style="font-size:24px">3/11</text><text x="492" y="361" class="odds">1 : 6</text>
+
+      <circle class="zone" data-id="4or10" cx="393" cy="455" r="45" fill="#fff3bf" stroke="#111" stroke-width="6"/>
+      <text x="393" y="462" class="label" style="font-size:24px">4/10</text><text x="393" y="486" class="odds">1 : 5</text>
+
+      <circle class="zone" data-id="5or9" cx="294" cy="580" r="45" fill="#fff3bf" stroke="#111" stroke-width="6"/>
+      <text x="294" y="587" class="label" style="font-size:24px">5/9</text><text x="294" y="611" class="odds">1 : 4</text>
+
+      <circle class="zone" data-id="6or8" cx="195" cy="705" r="45" fill="#fff3bf" stroke="#111" stroke-width="6"/>
+      <text x="195" y="712" class="label" style="font-size:24px">6/8</text><text x="195" y="736" class="odds">1 : 3</text>
+
+      <!-- Numbers -->
+      <rect class="zone" data-id="2"  x="650" y="160" width="90" height="70" fill="transparent"/>
+      <rect class="zone" data-id="12" x="740" y="160" width="90" height="70" fill="transparent"/>
+      <text x="695" y="205" class="label">2</text><text x="785" y="205" class="label">12</text>
+      <text x="695" y="225" class="odds">1 : 24</text><text x="785" y="225" class="odds">1 : 24</text>
+
+      <rect class="zone" data-id="3"  x="630" y="285" width="90" height="70" fill="transparent"/>
+      <rect class="zone" data-id="11" x="760" y="285" width="90" height="70" fill="transparent"/>
+      <text x="675" y="330" class="label">3</text><text x="805" y="330" class="label">11</text>
+      <text x="675" y="350" class="odds">1 : 12</text><text x="805" y="350" class="odds">1 : 12</text>
+
+      <rect class="zone" data-id="4"  x="610" y="410" width="90" height="70" fill="transparent"/>
+      <rect class="zone" data-id="10" x="790" y="410" width="90" height="70" fill="transparent"/>
+      <text x="655" y="455" class="label">4</text><text x="835" y="455" class="label">10</text>
+      <text x="655" y="475" class="odds">1 : 10</text><text x="835" y="475" class="odds">1 : 10</text>
+
+      <rect class="zone" data-id="5"  x="590" y="535" width="90" height="70" fill="transparent"/>
+      <rect class="zone" data-id="9"  x="820" y="535" width="90" height="70" fill="transparent"/>
+      <text x="635" y="580" class="label">5</text><text x="865" y="580" class="label">9</text>
+      <text x="635" y="600" class="odds">1 : 8</text><text x="865" y="600" class="odds">1 : 8</text>
+
+      <rect class="zone" data-id="6"  x="570" y="660" width="90" height="70" fill="transparent"/>
+      <rect class="zone" data-id="8"  x="840" y="660" width="90" height="70" fill="transparent"/>
+      <text x="615" y="705" class="label">6</text><text x="885" y="705" class="label">8</text>
+      <text x="615" y="725" class="odds">1 : 6</text><text x="885" y="725" class="odds">1 : 6</text>
+
+      <!-- 7 -->
+      <rect class="zone" data-id="7" x="710" y="755" width="80" height="60" fill="transparent"/>
+      <text x="750" y="785" class="label" style="font-size:50px">7</text>
+      <text x="750" y="805" class="odds">1 : 2</text>
+
+      <g id="chipLayer"></g>
+    </svg>
+  </div>
+
+  <div class="chips" id="chipBar">
+    <div class="chip active" data-val="1">1</div><div class="chip" data-val="5">5</div>
+    <div class="chip" data-val="10">10</div><div class="chip" data-val="25">25</div><div class="chip" data-val="100">100</div>
+  </div>
+
+  <div class="controls">
+    <button id="startBtn">Start</button>
+    <button id="clearBtn">Clear Bets</button>
+    <button id="cashBtn">Cash Out</button>
+  </div>
+
+  <div class="meter">
+    <div>Round wager: <strong id="roundLoss">0</strong> GP</div>
+    <div>Round win: <strong id="roundWin">0</strong> GP</div>
+    <div>Total losses (wagered): <strong id="totLoss">0</strong> GP</div>
+    <div>Total wins (returned): <strong id="totWin">0</strong> GP</div>
+  </div>
+  <div class="small">Click a chip, then any region to bet. “Losses” = total wagered; “Wins” = return paid out.</div>
+
+<script>
+const PAY = {
+  low:{type:'range', range:[2,6], mult:2},
+  high:{type:'range', range:[8,12], mult:2},
+  7:{type:'eq', v:7, mult:3},
+  6:{type:'eq', v:6, mult:7}, 8:{type:'eq', v:8, mult:7},
+  5:{type:'eq', v:5, mult:9}, 9:{type:'eq', v:9, mult:9},
+  4:{type:'eq', v:4, mult:11},10:{type:'eq', v:10, mult:11},
+  3:{type:'eq', v:3, mult:13},11:{type:'eq', v:11, mult:13},
+  2:{type:'eq', v:2, mult:25},12:{type:'eq', v:12, mult:25},
+  "6or8": {type:'any', vals:[6,8], mult:4},
+  "5or9": {type:'any', vals:[5,9], mult:5},
+  "4or10":{type:'any', vals:[4,10], mult:6},
+  "3or11":{type:'any', vals:[3,11], mult:7},
+  "2or12":{type:'any', vals:[2,12], mult:13},
+};
+
+const anchor = {
+  low:[190,330], high:[1310,330],
+  "2":[695,190], "12":[785,190],
+  "3":[675,315], "11":[805,315],
+  "4":[655,440], "10":[835,440],
+  "5":[635,565], "9":[865,565],
+  "6":[615,690], "8":[885,690],
+  "7":[750,795],
+  "2or12":[591,205], "3or11":[492,330], "4or10":[393,455], "5or9":[294,580], "6or8":[195,705]
+};
+
+let activeChip=1, betBook={}, wins=0, losses=0, roundWager=0, roundWin=0, overlayTimer=null;
+
+document.querySelectorAll('.chip').forEach(c=>{
+  c.onclick=()=>{document.querySelectorAll('.chip').forEach(x=>x.classList.remove('active')); c.classList.add('active'); activeChip=+c.dataset.val;}
+});
+document.querySelectorAll('.zone').forEach(z=>z.addEventListener('click',()=>placeBet(z.dataset.id,activeChip)));
+
+const chipLayer=document.getElementById('chipLayer'), chipStackCount={};
+function placeBet(id,amount){ if(amount<1)return; betBook[id]=(betBook[id]||0)+amount; losses+=amount; roundWager+=amount; updateMeters(); drawChip(id,amount); }
+function drawChip(id,amount){
+  const [x,y]=anchor[id], n=(chipStackCount[id]=(chipStackCount[id]||0)+1), dx=((n-1)%4)*16-12, dy=Math.floor((n-1)/4)*16*-1;
+  ensureChipGradient(); const g=svgEl('g',{transform:`translate(${x+dx},${y+dy})`});
+  g.appendChild(svgEl('circle',{r:20,fill:'url(#chipGrad)',stroke:'#111','stroke-width':3}));
+  const t=svgEl('text',{x:0,y:6,'text-anchor':'middle','font-family':'ui-sans-serif,system-ui,Arial','font-weight':'700','font-size':14}); t.textContent=amount;
+  g.appendChild(t); chipLayer.appendChild(g);
+}
+function svgEl(n,a){const e=document.createElementNS('http://www.w3.org/2000/svg',n); for(const k in a)e.setAttribute(k,a[k]); return e;}
+function ensureChipGradient(){ if(document.getElementById('chipGrad'))return; const d=svgEl('defs',{}), g=svgEl('radialGradient',{id:'chipGrad',cx:'30%',cy:'30%'}); g.appendChild(svgEl('stop',{offset:'0','stop-color':'#f6e48a'})); g.appendChild(svgEl('stop',{offset:'1','stop-color':'#c5a100'})); document.getElementById('board').prepend(d); d.appendChild(g); }
+
+document.getElementById('startBtn').onclick=startRound;
+document.getElementById('cashBtn').onclick=cashOut;
+document.getElementById('clearBtn').onclick=clearBets;
+
+function roll2d6(){const d1=1+Math.floor(Math.random()*6), d2=1+Math.floor(Math.random()*6); return [d1,d2,d1+d2];}
+
+function startRound(){
+  if(!Object.keys(betBook).length){alert("Place at least one bet.");return;}
+  const [,,sum]=roll2d6();
+  showWinning(sum);
+
+  roundWin=0;
+  for(const [id,amt] of Object.entries(betBook)){
+    const r=PAY[id];
+    const hit = r.type==='eq' ? (sum===r.v) : r.type==='range' ? (sum>=r.range[0] && sum<=r.range[1]) : r.vals.includes(sum);
+    if(hit) roundWin += amt*r.mult;
+  }
+  wins += roundWin;
+
+  // clear table
+  betBook = {}; chipLayer.innerHTML=''; for(const k in chipStackCount) delete chipStackCount[k];
+  roundWager=0; updateMeters();
+}
+
+function showWinning(sum){
+  const box=document.getElementById('overlay'), span=document.getElementById('winOverlay');
+  span.textContent = `Winning Number: ${sum}`;
+  box.style.display='flex';
+  if(overlayTimer) clearTimeout(overlayTimer);
+  overlayTimer=setTimeout(()=>{ box.style.display='none'; span.textContent=''; }, 5000);
+}
+
+function clearBets(){
+  const refund=Object.values(betBook).reduce((a,b)=>a+b,0);
+  losses=Math.max(0, losses-refund);
+  betBook={}; chipLayer.innerHTML=''; for(const k in chipStackCount) delete chipStackCount[k];
+  roundWager=0; updateMeters();
+}
+
+function cashOut(){
+  const net=wins-losses;
+  alert(`Cash Out
+
+Total Wins (returned):   ${wins} GP
+Total Losses (wagered):  ${losses} GP
+Net:                     ${net} GP
+
+Update your character sheet accordingly.`);
+  wins=losses=0; betBook={}; chipLayer.innerHTML=''; for(const k in chipStackCount) delete chipStackCount[k];
+  roundWager=0; roundWin=0; updateMeters();
+  document.getElementById('overlay').style.display='none';
+  document.getElementById('winOverlay').textContent='';
+}
+
+function updateMeters(){
+  document.getElementById('roundLoss').textContent=roundWager;
+  document.getElementById('roundWin').textContent=roundWin;
+  document.getElementById('totWin').textContent=wins;
+  document.getElementById('totLoss').textContent=losses;
+}
+</script>
+</body>
+</html>
